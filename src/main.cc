@@ -5,6 +5,7 @@
 #include <fcntl.h>
 
 #include <iostream>
+#include <unordered_map>
 
 #include "connection.h"
 #include "buffer.h"
@@ -18,6 +19,8 @@ int setNonBlocking1(int fd) {
     }
     return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
+
+std::unordered_map<int, Connection*> client;
 
 int main() {
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -55,7 +58,6 @@ int main() {
     // Connection* conn = nullptr;
 
     while (true) {
-        // int n = epoll_wait(epfd, events, 1024, -1);
         int n = epoller->Wait(-1);
         for (size_t i = 0; i < n; i++) {
             int fd = epoller->GetFd(i);
@@ -74,20 +76,14 @@ int main() {
                 
             } else if (epoller->GetEvents(i) & EPOLLIN) {
                 // 保证当前fd是由EPOLLIN唤醒，如果写else的话，events[i].events可能有其他值
-                int data = buffer->ReadFd(fd);
-                if (data > 0) {
-                    std::cout << "recv message\n";
-                    send(fd, "ok\n", 3, 0);
-                } else if (data == 0) {
-                    std::cout << "close connection";
-                    close(fd);
-                    epoller->DelFd(fd);
-                    break;
-                } else {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                        break;
-                    }
-                    perror("recv");
+                auto it = client.find(fd);
+                if (it == client.end()) {
+                    client[fd] = new Connection(fd, epoller);
+                }
+                Connection* conn(client[fd]);
+                conn->HandleRead();
+                if (conn->IsClose()) {
+                    client.erase(fd);
                 }
             }
         }

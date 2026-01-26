@@ -23,5 +23,6 @@ private:
     
     size_t ReadableBytes() const;
     size_t WritableBytes() const;
+    void MakeSpace(size_t len);
 };
 #endif

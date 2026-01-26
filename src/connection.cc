@@ -1,44 +1,41 @@
 #include "connection.h"
 
-int setNonBlocking(int fd) {
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags < 0) {
-        return -1;
-    }
-    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+Connection::Connection(int fd, Epoller* epoller) : fd_(fd), epoller_(epoller), input_buffer_(1024), output_buffer_(1024), is_close_(false) {
+    epoller_->AddFd(fd_, EPOLLIN);
+}
+Connection::~Connection() {
+    epoller_->DelFd(fd_);
 }
 
-Connection::Connection(int fd, int epfd) : fd_(fd), epfd_(epfd), buf_{} {
-    setNonBlocking(fd_);
-    epoll_event cev{};
-    cev.data.fd = fd_;
-    cev.events = EPOLLIN;
-    epoll_ctl(epfd, EPOLL_CTL_ADD, fd_, &cev);
-    std::cout << "new connection\n";
+// EPOLLOUT
+void Connection::HandleWrite() {
+
 }
 
-void Connection::closeConnection() {
-    epoll_ctl(epfd_, EPOLL_CTL_DEL, fd_, nullptr);
-    close(fd_);
-    std::cout << "Connection is closed\n";
-}
-
+// EPOLLIN
 void Connection::HandleRead() {
-    while (true) {
-        std::cout << "recv messages\n";
-        int bytes = recv(fd_, buf_, sizeof(buf_), 0);
-        if (bytes > 0) {
-            std::cout << "buf: " << buf_ << std::endl;
-        } else if (bytes == 0) {
-            closeConnection();
-            return;
-        } else {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
-            }
-            perror("recv");
-            closeConnection();
+    int datas = input_buffer_.ReadFd(fd_);
+    if (datas > 0) {
+        std::cout << "recv message\n";
+        input_buffer_.WriteFd(fd_);
+
+    } else if (datas == 0) {
+        std::cout << "connection close\n";
+        SetClose();
+        close(fd_);
+        return;
+    } else {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return;
         }
+        perror("recv");
     }
+}
+
+void Connection::SetClose() {
+    is_close_ = true;
+}
+
+bool Connection::IsClose() {
+    return is_close_;
 }

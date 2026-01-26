@@ -1,3 +1,6 @@
+#ifndef CONNECTION_H
+#define CONNECTION_H
+
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include <unistd.h>
@@ -6,18 +9,24 @@
 #include <iostream>
 
 #include "buffer.h"
+#include "epoller.h"
+
 class Connection {
 public:
-    Connection(int fd, int epfd);
-    ~Connection() = default;
+    Connection(int fd, Epoller* epoller);
+    ~Connection();
+
+    void HandleWrite();
     void HandleRead();
-    void closeConnection();
-    
+    void SetClose();
+    bool IsClose();
 private:
     int fd_;
-    int epfd_;
-    char buf_[1024];
+    Epoller* epoller_;
+    Buffer input_buffer_;
+    Buffer output_buffer_;
+    bool is_close_;
     
-    Buffer* read_buf_;
-    Buffer* write_buf_;
 };
+
+#endif

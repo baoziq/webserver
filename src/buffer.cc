@@ -13,33 +13,25 @@ size_t Buffer::WritableBytes() const {
 int Buffer::ReadFd(int fd) {
     char buffer[65534];
     struct iovec iov[2];
+    const int writable = WritableBytes();
+
     iov[0].iov_base = &buffer_[write_index_];
     iov[0].iov_len = WritableBytes();
     iov[1].iov_base = buffer;
     iov[1].iov_len = sizeof(buffer);
-    
-    ssize_t len = readv(fd, iov, 2);
+
+    int iovcnt = (writable < sizeof(buffer) ? 2 : 1);
+    ssize_t len = readv(fd, iov, iovcnt);
+
     if (len < 0) {
-        perror("readv");
         return -1;
     } else if (static_cast<size_t>(len) <= WritableBytes()) {
         write_index_ += len;
     } else {
-        ssize_t remain_len = len - WritableBytes();
-        write_index_ = buffer_.size();
-        if (remain_len > read_index_) {
-            buffer_.resize(buffer_.size() + remain_len + 1);
-            std::copy(&buffer[0], &buffer[remain_len], &buffer_[write_index_]);
-        } else {
-            std::copy(&buffer_[read_index_], &buffer_[write_index_], &buffer_[0]);
-            read_index_ = 0;
-            write_index_ = buffer_.size();
-            std::copy(&buffer[0], &buffer[remain_len], &buffer_[write_index_]);
-        }
+        ssize_t remain_len = len - writable;  
+        MakeSpace(remain_len);
+        std::copy(buffer, buffer + remain_len, &buffer_[write_index_]);
         write_index_ += remain_len;
-    }
-    for (int i = 0; i < len; i++) {
-        std::cout << "buffer: " << buffer_[i] << std::endl;
     }
     return len;
 }
@@ -59,4 +51,14 @@ std::string Buffer::RetrieveAllString() {
     read_index_ = 0;
     write_index_ = 0;
     return res;
+}
+
+void Buffer::MakeSpace(size_t len) {
+    if (WritableBytes() + read_index_ < len) {
+        buffer_.resize(write_index_ + len);
+    } else {
+        std::copy_backward(&buffer_[read_index_], &buffer_[write_index_], &buffer_[0]);
+        write_index_ = write_index_ - read_index_;
+        read_index_ = 0;
+    }
 }
