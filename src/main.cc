@@ -71,20 +71,27 @@ int main() {
                         perror("accept");
                         return 1;
                     }
-                    epoller->AddFd(client_fd, EPOLLIN);
+                    client[client_fd] = new Connection(client_fd, epoller);
                 }
                 
-            } else if (epoller->GetEvents(i) & EPOLLIN) {
-                // 保证当前fd是由EPOLLIN唤醒，如果写else的话，events[i].events可能有其他值
+            } else {
                 auto it = client.find(fd);
                 if (it == client.end()) {
-                    client[fd] = new Connection(fd, epoller);
+                    continue;
                 }
-                Connection* conn(client[fd]);
-                conn->HandleRead();
+                Connection* conn = it->second;
+                uint32_t events = epoller->GetEvents(i);
+                if (events & EPOLLIN) {
+                    conn->HandleRead();
+                }
+                if (events & EPOLLOUT) {
+                    conn->HandleWrite();
+                }
                 if (conn->IsClose()) {
-                    client.erase(fd);
+                    delete conn;
+                    client.erase(it);
                 }
+                
             }
         }
     }
