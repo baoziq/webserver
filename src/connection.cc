@@ -23,7 +23,7 @@ void Connection::closeConnection() {
     std::cout << "Connection is closed\n";
 }
 
-void Connection::handleRead() {
+void Connection::HandleRead() {
     while (true) {
         std::cout << "recv messages\n";
         int bytes = recv(fd_, buf_, sizeof(buf_), 0);

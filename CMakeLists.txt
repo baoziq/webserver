@@ -6,7 +6,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
-add_library(connection src/connection.cc)
+add_library(Mylib STATIC
+    src/buffer.cc
+    src/epoller.cc
+)
+
 add_executable(webserver  src/main.cc)
 
-target_link_libraries(webserver connection)
+target_link_libraries(webserver PRIVATE Mylib)

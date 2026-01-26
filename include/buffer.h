@@ -1,3 +1,5 @@
+#ifndef BUFFER_H
+#define BUFFER_H
 #include <sys/uio.h>
 #include <vector>
 #include <unistd.h>
@@ -9,8 +11,10 @@ class Buffer {
 public:
     Buffer(int buffer_size);
     ~Buffer() = default;
-    bool ReadFd(int fd);
-    bool WriteFd(int fd);
+    int ReadFd(int fd);
+    int WriteFd(int fd);
+    // only for debug
+    std::string RetrieveAllString();
 
 private:
     std::vector<char> buffer_;
@@ -20,3 +24,4 @@ private:
     size_t ReadableBytes() const;
     size_t WritableBytes() const;
 };
+#endif

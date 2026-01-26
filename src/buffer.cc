@@ -10,7 +10,7 @@ size_t Buffer::WritableBytes() const {
     return buffer_.size() - write_index_;
 }
 
-bool Buffer::ReadFd(int fd) {
+int Buffer::ReadFd(int fd) {
     char buffer[65534];
     struct iovec iov[2];
     iov[0].iov_base = &buffer_[write_index_];
@@ -21,7 +21,7 @@ bool Buffer::ReadFd(int fd) {
     ssize_t len = readv(fd, iov, 2);
     if (len < 0) {
         perror("readv");
-        return false;
+        return -1;
     } else if (static_cast<size_t>(len) <= WritableBytes()) {
         write_index_ += len;
     } else {
@@ -36,20 +36,27 @@ bool Buffer::ReadFd(int fd) {
             write_index_ = buffer_.size();
             std::copy(&buffer[0], &buffer[remain_len], &buffer_[write_index_]);
         }
-        write_index_ += read_index_;
-
-
+        write_index_ += remain_len;
     }
-    return true;
+    for (int i = 0; i < len; i++) {
+        std::cout << "buffer: " << buffer_[i] << std::endl;
+    }
+    return len;
 }
 
-bool Buffer::WriteFd(int fd) {
+int Buffer::WriteFd(int fd) {
     ssize_t len = write(fd, &buffer_[read_index_], ReadableBytes());
     if (len < 0) {
         perror("write");
-        return false;
+        return -1;
     }
     read_index_ += len;
-    return true;
+    return len;
 }
 
+std::string Buffer::RetrieveAllString() {
+    std::string res(buffer_.begin() + read_index_, buffer_.begin() + write_index_);
+    read_index_ = 0;
+    write_index_ = 0;
+    return res;
+}

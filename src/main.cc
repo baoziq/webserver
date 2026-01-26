@@ -7,6 +7,8 @@
 #include <iostream>
 
 #include "connection.h"
+#include "buffer.h"
+#include "epoller.h"
 
 // 从内核中取出当前fd的标志位，把非阻塞那位设置为1
 int setNonBlocking1(int fd) {
@@ -44,29 +46,19 @@ int main() {
         perror("listen");
         return 1;
     }
+    
+    Epoller* epoller = new Epoller(1024);
+    epoller->AddFd(listen_fd, EPOLLIN);
 
-    int epfd = epoll_create1(0);
-    if (epfd < 0) {
-        perror("epoll create1");
-        return 1;
-    }
+    Buffer* buffer = new Buffer(8);
 
-    epoll_event ev{};
-    ev.data.fd = listen_fd;
-    ev.events = EPOLLIN;
-
-    epoll_ctl(epfd, EPOLL_CTL_ADD, listen_fd, &ev);
-
-    epoll_event events[1024];
-    char buf[1024];
-
-    Connection* conn = nullptr;
+    // Connection* conn = nullptr;
 
     while (true) {
-        int n = epoll_wait(epfd, events, 1024, -1);
-        for (int i = 0; i < n; i++) {
-            int fd = events[i].data.fd;
-
+        // int n = epoll_wait(epfd, events, 1024, -1);
+        int n = epoller->Wait(-1);
+        for (size_t i = 0; i < n; i++) {
+            int fd = epoller->GetFd(i);
             if (fd == listen_fd) {
                 while (true) {
                     int client_fd = accept(fd, nullptr, nullptr);
@@ -77,18 +69,31 @@ int main() {
                         perror("accept");
                         return 1;
                     }
-                    conn = new Connection(client_fd, epfd);
+                    epoller->AddFd(client_fd, EPOLLIN);
                 }
                 
-            } else if (events[i].events & EPOLLIN) {
+            } else if (epoller->GetEvents(i) & EPOLLIN) {
                 // 保证当前fd是由EPOLLIN唤醒，如果写else的话，events[i].events可能有其他值
-                conn->handleRead();
+                int data = buffer->ReadFd(fd);
+                if (data > 0) {
+                    std::cout << "recv message\n";
+                    send(fd, "ok\n", 3, 0);
+                } else if (data == 0) {
+                    std::cout << "close connection";
+                    close(fd);
+                    epoller->DelFd(fd);
+                    break;
+                } else {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                        break;
+                    }
+                    perror("recv");
+                }
             }
         }
     }
 
     close(listen_fd);
-    close(epfd);
     return 0;
 
 }
