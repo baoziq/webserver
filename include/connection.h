@@ -20,6 +20,8 @@ public:
     void HandleRead();
     void SetClose();
     bool IsClose();
+    void Send(const std::string& str);
+    
 private:
     int fd_;
     Epoller* epoller_;

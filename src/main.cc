@@ -55,8 +55,6 @@ int main() {
 
     Buffer* buffer = new Buffer(8);
 
-    // Connection* conn = nullptr;
-
     while (true) {
         int n = epoller->Wait(-1);
         for (size_t i = 0; i < n; i++) {

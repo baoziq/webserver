@@ -13,16 +13,17 @@ public:
     ~Buffer() = default;
     int ReadFd(int fd);
     int WriteFd(int fd);
-    // only for debug
-    std::string RetrieveAllString();
-
+    size_t ReadableBytes() const;
+    size_t WritableBytes() const;
+    void Append(const char* ch, size_t len);
+    void Append(const std::string& str);
+    void EnsureWritable(size_t len);
 private:
     std::vector<char> buffer_;
     size_t read_index_;
     size_t write_index_;
     
-    size_t ReadableBytes() const;
-    size_t WritableBytes() const;
+    
     void MakeSpace(size_t len);
 };
 #endif

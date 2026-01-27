@@ -10,6 +10,7 @@ add_library(Mylib STATIC
     src/buffer.cc
     src/epoller.cc
     src/connection.cc
+    src/http_request.cc
 )
 
 add_executable(webserver  src/main.cc)

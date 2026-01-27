@@ -10,6 +10,22 @@ size_t Buffer::WritableBytes() const {
     return buffer_.size() - write_index_;
 }
 
+void Buffer::EnsureWritable(size_t len) {
+    if (len > WritableBytes()) {
+        MakeSpace(len);
+    }
+}
+
+void Buffer::Append(const char* ch, size_t len) {
+    EnsureWritable(len);
+    std::copy(ch, ch + len, &buffer_[write_index_]);
+    write_index_ +=  len;
+}
+
+void Buffer::Append(const std::string& str) {
+    Append(str.data(), str.size());
+}
+
 int Buffer::ReadFd(int fd) {
     char buffer[65534];
     struct iovec iov[2];
@@ -29,9 +45,7 @@ int Buffer::ReadFd(int fd) {
         write_index_ += len;
     } else {
         ssize_t remain_len = len - writable;  
-        MakeSpace(remain_len);
-        std::copy(buffer, buffer + remain_len, &buffer_[write_index_]);
-        write_index_ += remain_len;
+        Append(buffer, remain_len);
     }
     return len;
 }
@@ -44,13 +58,6 @@ int Buffer::WriteFd(int fd) {
     }
     read_index_ += len;
     return len;
-}
-
-std::string Buffer::RetrieveAllString() {
-    std::string res(buffer_.begin() + read_index_, buffer_.begin() + write_index_);
-    read_index_ = 0;
-    write_index_ = 0;
-    return res;
 }
 
 void Buffer::MakeSpace(size_t len) {
