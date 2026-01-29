@@ -1,4 +1,4 @@
-#include "connection.h"
+#include "../include/connection.h"
 
 Connection::Connection(int fd, Epoller* epoller) : fd_(fd), epoller_(epoller), input_buffer_(1024), output_buffer_(1024), is_close_(false) {
     epoller_->AddFd(fd_, EPOLLIN);
