@@ -5,6 +5,7 @@ Connection::Connection(int fd, Epoller* epoller) : fd_(fd), epoller_(epoller), i
 }
 Connection::~Connection() {
     epoller_->DelFd(fd_);
+    close(fd_);
 }
 
 void Connection::Send(const std::string& str) {

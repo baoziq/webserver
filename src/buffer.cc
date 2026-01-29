@@ -1,4 +1,6 @@
 #include "../include/buffer.h"
+#include <cstddef>
+#include <unistd.h>
 
 Buffer::Buffer(int buffer_size) : buffer_(buffer_size), read_index_(0), write_index_(0) {}
 
@@ -68,4 +70,24 @@ void Buffer::MakeSpace(size_t len) {
         write_index_ = write_index_ - read_index_;
         read_index_ = 0;
     }
+}
+
+bool Buffer::ReadLine(std::string& line) {
+    for (size_t i = read_index_; i < write_index_ - 1; i++) {
+        if (buffer_[i] == '\r' && buffer_[i + 1] == '\n') {
+            line.assign(&buffer_[read_index_], i - read_index_);
+            read_index_ = i + 2;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Buffer::ReadBytes(std::string& data, size_t len) {
+    if (ReadableBytes() < len) {
+        return false;  // 数据不够
+    }
+    data.assign(&buffer_[read_index_], len);
+    read_index_ += len;
+    return true;
 }

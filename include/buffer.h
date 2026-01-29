@@ -18,6 +18,8 @@ public:
     void Append(const char* ch, size_t len);
     void Append(const std::string& str);
     void EnsureWritable(size_t len);
+    bool ReadLine(std::string& line);
+    bool ReadBytes(std::string& data, size_t len);
 private:
     std::vector<char> buffer_;
     size_t read_index_;
