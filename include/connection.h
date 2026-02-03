@@ -10,6 +10,8 @@
 
 #include "buffer.h"
 #include "epoller.h"
+#include "http_request.h"
+#include "http_response.h"
 
 class Connection {
 public:
@@ -28,7 +30,7 @@ private:
     Buffer input_buffer_;
     Buffer output_buffer_;
     bool is_close_;
-    
+    HttpRequest http_request_;
 };
 
 #endif

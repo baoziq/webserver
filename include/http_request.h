@@ -1,3 +1,5 @@
+#ifndef HTTP_REQUEST_H
+#define HTTP_REQUEST_H
 #include <unordered_map>
 #include <string>
 
@@ -31,3 +33,4 @@ private:
     bool GetLine(std::string& line);
     ParseState state_;
 };
+#endif

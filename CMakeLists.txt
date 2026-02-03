@@ -11,6 +11,7 @@ add_library(Mylib STATIC
     src/epoller.cc
     src/connection.cc
     src/http_request.cc
+    src/http_response.cc
 )
 
 add_executable(webserver  src/main.cc)

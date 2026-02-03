@@ -1,6 +1,9 @@
 #include "../include/connection.h"
 
-Connection::Connection(int fd, Epoller* epoller) : fd_(fd), epoller_(epoller), input_buffer_(1024), output_buffer_(1024), is_close_(false) {
+Connection::Connection(int fd, Epoller* epoller) : 
+    fd_(fd), epoller_(epoller), input_buffer_(1024), 
+    output_buffer_(1024), is_close_(false),  
+    http_request_() {
     epoller_->AddFd(fd_, EPOLLIN);
 }
 Connection::~Connection() {
@@ -46,17 +49,20 @@ void Connection::HandleWrite() {
 void Connection::HandleRead() {
     int datas = input_buffer_.ReadFd(fd_);
     if (datas > 0) {
-        std::string response = 
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/plain\r\n"
-            "Content-Length: 13\r\n"
-            "\r\n"
-            "Hello, Linux!";
-        Send(response);
+        if (!http_request_.Parse(input_buffer_)) {
+            return;
+        }
+        HttpResponse response;
+        response.SetStatusCode(200);
+        response.SetContentType("text/plain");
+        std::string body = "Method: " + http_request_.GetMethod() + "\n"
+                        + "Path: " + http_request_.GetPath() + "\n"
+                        + "Version: " + http_request_.GetVersion() + "\n"
+                        + "Body: " + http_request_.GetBody();
+        response.SetBody(body);
+        Send(response.Build());
     } else if (datas == 0) {
-        std::cout << "connection close\n";
         SetClose();
-        close(fd_);
         return;
     } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {

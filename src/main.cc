@@ -7,7 +7,6 @@
 #include <unordered_map>
 
 #include "../include/connection.h"
-#include "../include/buffer.h"
 #include "../include/epoller.h"
 
 // 从内核中取出当前fd的标志位，把非阻塞那位设置为1
@@ -51,8 +50,6 @@ int main() {
     
     Epoller* epoller = new Epoller(1024);
     epoller->AddFd(listen_fd, EPOLLIN);
-
-    Buffer* buffer = new Buffer(8);
 
     while (true) {
         int n = epoller->Wait(-1);
