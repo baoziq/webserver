@@ -12,6 +12,8 @@ add_library(Mylib STATIC
     src/connection.cc
     src/http_request.cc
     src/http_response.cc
+        include/thread.h
+        src/thread.cc
 )
 
 add_executable(webserver  src/main.cc)

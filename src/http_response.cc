@@ -30,7 +30,8 @@ std::string HttpResponse::Build() {
     oss << "HTTP/1.1 " << status_code_ << " " << GetStatusMessage() << "\r\n";
     oss << "Content-Type: " << content_type_ << "\r\n";
     oss << "Content-Length: " << body_.size() << "\r\n";
-    oss << "Connection: close\r\n";
+    // 默认使用长连接，便于压测工具复用 TCP 连接
+    oss << "Connection: keep-alive\r\n";
     oss << "\r\n";
     oss << body_;
     return oss.str();

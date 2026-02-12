@@ -10,6 +10,8 @@ public:
     HttpRequest();
     ~HttpRequest();
     bool Parse(Buffer& buffer);
+    // 解析完一条请求后重置状态，支持长连接多次请求
+    void Reset();
     std::string GetMethod() const;
     std::string GetPath() const;
     std::string GetVersion() const;
@@ -30,7 +32,6 @@ private:
     bool ParseRequestLine(const std::string& buffer);
     bool ParseRequestHeader(const std::string& buffer);
     bool ParseRequestBody(const std::string& buffer);
-    bool GetLine(std::string& line);
     ParseState state_;
 };
 #endif

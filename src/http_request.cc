@@ -7,6 +7,15 @@ HttpRequest::HttpRequest() : method_(), path_(), version_(),  header_(), body_()
 
 HttpRequest::~HttpRequest() {}
 
+void HttpRequest::Reset() {
+    method_.clear();
+    path_.clear();
+    version_.clear();
+    header_.clear();
+    body_.clear();
+    state_ = REQUEST_LINE;
+}
+
 std::string HttpRequest::GetMethod() const {
     return method_;
 }
@@ -56,11 +65,6 @@ bool HttpRequest::ParseRequestHeader(const std::string& line) {
     }
 
     header_[key] = value;
-    return true;
-}
-
-bool HttpRequest::ParseRequestBody(const std::string& line) {
-    body_ = line;
     return true;
 }
 
